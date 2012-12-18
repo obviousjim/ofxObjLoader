@@ -11,8 +11,13 @@
 
  */
 
+#ifdef _MSC_VER
+	#include <windows.h>
+	#define GLEW_STATIC
+	#include "GL\glew.h"
+	#include "GL\wglew.h"
+#endif
 
-#include <GLUT/glut.h>
 
 #ifdef __cplusplus
 extern "C" {
