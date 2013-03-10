@@ -16,6 +16,8 @@
 	#define GLEW_STATIC
 	#include "GL\glew.h"
 	#include "GL\wglew.h"
+#else 
+	#include <GLUT/glut.h>
 #endif
 
 
