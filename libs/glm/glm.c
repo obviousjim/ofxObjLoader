@@ -271,7 +271,7 @@ glmReadMTL(GLMmodel* model, char* name)
   if (!file) {
     fprintf(stderr, "glmReadMTL() failed: can't open material file \"%s\".\n",
 	    filename);
-    exit(1);
+	  return;
   }
   free(filename);
 
@@ -399,7 +399,7 @@ glmWriteMTL(GLMmodel* model, char* modelpath, char* mtllibname)
   if (!file) {
     fprintf(stderr, "glmWriteMTL() failed: can't open file \"%s\".\n",
 	    filename);
-    exit(1);
+	  return;
   }
   free(filename);
 
@@ -474,7 +474,7 @@ glmFirstPass(GLMmodel* model, FILE* file)
 	break;
       default:
 	printf("glmFirstPass(): Unknown token \"%s\".\n", buf);
-	exit(1);
+	return;
 	break;
       }
       break;
@@ -1313,6 +1313,7 @@ glmReadOBJ(char* filename)
   if (!file) {
     fprintf(stderr, "glmReadOBJ() failed: can't open data file \"%s\".\n",
 	    filename);
+	  return;
   }
 
   /* allocate a new model */
@@ -1433,7 +1434,7 @@ glmWriteOBJ(GLMmodel* model, char* filename, GLuint mode)
   if (!file) {
     fprintf(stderr, "glmWriteOBJ() failed: can't open file \"%s\" to write.\n",
 	    filename);
-    exit(1);
+	  return;
   }
 
   /* spit out a header */
