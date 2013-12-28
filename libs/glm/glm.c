@@ -271,7 +271,7 @@ glmReadMTL(GLMmodel* model, char* name)
   if (!file) {
     fprintf(stderr, "glmReadMTL() failed: can't open material file \"%s\".\n",
 	    filename);
-	  return;
+    return;
   }
   free(filename);
 
@@ -303,6 +303,7 @@ glmReadMTL(GLMmodel* model, char* name)
   /* set the default material */
   for (i = 0; i < nummaterials; i++) {
     model->materials[i].name = NULL;
+	model->materials[i].texture_path = NULL;
     model->materials[i].shininess = 65.0;
     model->materials[i].diffuse[0] = 0.8;
     model->materials[i].diffuse[1] = 0.8;
@@ -399,7 +400,7 @@ glmWriteMTL(GLMmodel* model, char* modelpath, char* mtllibname)
   if (!file) {
     fprintf(stderr, "glmWriteMTL() failed: can't open file \"%s\".\n",
 	    filename);
-	  return;
+    return;
   }
   free(filename);
 
@@ -416,7 +417,8 @@ glmWriteMTL(GLMmodel* model, char* modelpath, char* mtllibname)
   for (i = 0; i < model->nummaterials; i++) {
     material = &model->materials[i];
     fprintf(file, "newmtl %s\n", material->name);
-    fprintf(file, "Ka %f %f %f\n", 
+    fprintf(file, "map_Kd %s\n", material->texture_path);
+    fprintf(file, "Ka %f %f %f\n",
 	    material->ambient[0], material->ambient[1], material->ambient[2]);
     fprintf(file, "Kd %f %f %f\n", 
 	    material->diffuse[0], material->diffuse[1], material->diffuse[2]);
@@ -425,6 +427,8 @@ glmWriteMTL(GLMmodel* model, char* modelpath, char* mtllibname)
     fprintf(file, "Ns %f\n", material->shininess / 128.0 * 1000.0);
     fprintf(file, "\n");
   }
+	
+  fflush(file);
 }
 
 
@@ -582,6 +586,7 @@ glmSecondPass(GLMmodel* model, FILE* file)
   GLuint    numtexcoords;		/* number of texcoords in model */
   GLuint    numtriangles;		/* number of triangles in model */
   GLfloat*  vertices;			/* array of vertices  */
+  GLfloat*  colors;			/* array of vertices  */
   GLfloat*  normals;			/* array of normals */
   GLfloat*  texcoords;			/* array of texture coordinates */
   GLMgroup* group;			/* current group pointer */
@@ -591,6 +596,7 @@ glmSecondPass(GLMmodel* model, FILE* file)
 
   /* set the pointer shortcuts */
   vertices     = model->vertices;
+  colors       = model->colors;
   normals      = model->normals;
   texcoords    = model->texcoords;
   group        = model->groups;
@@ -600,6 +606,7 @@ glmSecondPass(GLMmodel* model, FILE* file)
   numvertices = numnormals = numtexcoords = 1;
   numtriangles = 0;
   material = 0;
+
   while(fscanf(file, "%s", buf) != EOF) {
     switch(buf[0]) {
     case '#':				/* comment */
@@ -609,10 +616,13 @@ glmSecondPass(GLMmodel* model, FILE* file)
     case 'v':				/* v, vn, vt */
       switch(buf[1]) {
       case '\0':			/* vertex */
-	fscanf(file, "%f %f %f", 
+  model->has_vertex_color = (6 == fscanf(file, "%f %f %f %f %f %f",
 	       &vertices[3 * numvertices + 0], 
 	       &vertices[3 * numvertices + 1], 
-	       &vertices[3 * numvertices + 2]);
+	       &vertices[3 * numvertices + 2],
+         &colors[3 * numvertices + 0],
+         &colors[3 * numvertices + 1],
+         &colors[3 * numvertices + 2]));
 	numvertices++;
 	break;
       case 'n':				/* normal */
@@ -1282,7 +1292,11 @@ glmDelete(GLMmodel* model)
   if (model->triangles)  free(model->triangles);
   if (model->materials) {
     for (i = 0; i < model->nummaterials; i++)
+	{
       free(model->materials[i].name);
+	  if (model->materials[i].texture_path != NULL)
+	    free(model->materials[i].texture_path);
+	}
   }
   free(model->materials);
   while(model->groups) {
@@ -1313,7 +1327,7 @@ glmReadOBJ(char* filename)
   if (!file) {
     fprintf(stderr, "glmReadOBJ() failed: can't open data file \"%s\".\n",
 	    filename);
-	  return;
+    return;
   }
 
   /* allocate a new model */
@@ -1322,6 +1336,7 @@ glmReadOBJ(char* filename)
   model->mtllibname    = NULL;
   model->numvertices   = 0;
   model->vertices      = NULL;
+  model->colors        = NULL;
   model->numnormals    = 0;
   model->normals       = NULL;
   model->numtexcoords  = 0;
@@ -1345,6 +1360,8 @@ glmReadOBJ(char* filename)
   /* allocate memory */
   model->vertices = (GLfloat*)malloc(sizeof(GLfloat) *
 				     3 * (model->numvertices + 1));
+  model->colors = (GLfloat*)malloc(sizeof(GLfloat) *
+             3 * (model->numvertices + 1));
   model->triangles = (GLMtriangle*)malloc(sizeof(GLMtriangle) *
 					  model->numtriangles);
   if (model->numnormals) {
@@ -1360,6 +1377,12 @@ glmReadOBJ(char* filename)
   rewind(file);
 
   glmSecondPass(model, file);
+  
+  if (!model->has_vertex_color)
+  {
+    free(model->colors);
+    model->colors = NULL;
+  }
 
   /* close the file */
   fclose(file);
@@ -1434,7 +1457,7 @@ glmWriteOBJ(GLMmodel* model, char* filename, GLuint mode)
   if (!file) {
     fprintf(stderr, "glmWriteOBJ() failed: can't open file \"%s\" to write.\n",
 	    filename);
-	  return;
+    return;
   }
 
   /* spit out a header */
@@ -1503,7 +1526,9 @@ glmWriteOBJ(GLMmodel* model, char* filename, GLuint mode)
   while(group) {
     fprintf(file, "g %s\n", group->name);
     if (mode & GLM_MATERIAL)
+	{
       fprintf(file, "usemtl %s\n", model->materials[group->material].name);
+	}
     for (i = 0; i < group->numtriangles; i++) {
       if (mode & GLM_SMOOTH && mode & GLM_TEXTURE) {
 	fprintf(file, "f %d/%d/%d %d/%d/%d %d/%d/%d\n",
