@@ -148,7 +148,7 @@ void save(string path, const ofMesh& mesh_, bool flipFace, bool flipNormals, boo
 	
 	path = ofToDataPath(path);
 	
-	ofFilePath::createEnclosingDirectory(path);
+//	ofFilePath::createEnclosingDirectory(path);
 
 	GLuint writeMode = GLM_NONE;
 	GLMmodel* m = new GLMmodel();
