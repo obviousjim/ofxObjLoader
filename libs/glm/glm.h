@@ -10,14 +10,34 @@
       coordinate generation (spheremap and planar projections) + more.
 
  */
+//#include "ofMain.h"
+#if defined( __WIN32__ ) || defined( _WIN32 )
+	#define TARGET_WIN32
+#elif defined( __APPLE_CC__)
+	#include <TargetConditionals.h>
 
-#ifdef _MSC_VER
-	#include <windows.h>
-	#define GLEW_STATIC
-	#include "GL\glew.h"
-	#include "GL\wglew.h"
-#else 
+	#if (TARGET_OS_IPHONE_SIMULATOR) || (TARGET_OS_IPHONE) || (TARGET_IPHONE)
+		#define TARGET_OF_IPHONE
+		#define TARGET_OPENGLES
+	#else
+		#define TARGET_OSX
+	#endif
+#elif defined (ANDROID)
+	#define TARGET_ANDROID
+	#define TARGET_OPENGLES
+#else
+	#define TARGET_LINUX
+#endif
+
+#ifdef TARGET_WIN32
+	#define GLUT_BUILDING_LIB
+	#include "glut.h"
+#endif
+#ifdef TARGET_OSX
 	#include <GLUT/glut.h>
+#endif
+#ifdef TARGET_LINUX
+	#include <GL/glut.h>
 #endif
 
 
@@ -42,6 +62,7 @@ extern "C" {
 typedef struct _GLMmaterial
 {
   char* name;				/* name of material */
+  char* texture_path;
   GLfloat diffuse[4];			/* diffuse component */
   GLfloat ambient[4];			/* ambient component */
   GLfloat specular[4];			/* specular component */
@@ -97,6 +118,9 @@ typedef struct _GLMmodel {
 
   GLfloat position[3];			/* position of the model */
 
+  GLfloat* colors;
+  int has_vertex_color;
+  
 } GLMmodel;
 
 
