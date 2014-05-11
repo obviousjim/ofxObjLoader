@@ -1327,7 +1327,7 @@ glmReadOBJ(char* filename)
   if (!file) {
     fprintf(stderr, "glmReadOBJ() failed: can't open data file \"%s\".\n",
 	    filename);
-    return;
+    return NULL;
   }
 
   /* allocate a new model */
